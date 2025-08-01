@@ -7,92 +7,158 @@
       margin: 0 auto;
     }
     td {
-      border: 1px solid #aaa;
-      width: 50px;
-      height: 50px;
+      border-top: 1px solid #888;
+      border-left: 1px solid #888;
+      width: 60px;
+      height: 60px;
       text-align: center;
+      padding: 0;
     }
+
+    /* Thick vertical borders */
+    td:nth-child(3), td:nth-child(6) {
+      border-right: 3px solid #555;
+    }
+
+    /* Thick horizontal borders */
+    tr:nth-child(2) td, tr:nth-child(4) td {
+      border-bottom: 3px solid #555;
+    }
+
+    /* Outer table borders */
+    td:last-child {
+      border-right: 1px solid #888;
+    }
+    tr:last-child td {
+      border-bottom: 1px solid #888;
+    }
+
     input {
       width: 100%;
       height: 100%;
       text-align: center;
-      font-size: 24px;
+      font-size: 28px;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
       border: none;
+      outline: none;
     }
     input[readonly] {
-      background-color: #eee;
+      background-color: transparent;
       font-weight: bold;
+      color: #222;
+      cursor: default;
     }
   </style>
 </head>
 <body>
+  <button onclick="clearUserInput()">Clear Input</button>
   <table id="sudoku"></table>
 
   <script>
-    let allowedDigit = null;
-    let initialPuzzle = null;
+    function clearUserInput() {
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < 6; j++) {
+      const inputEl = document.getElementById(`cell-${i}-${j}`);
+      if (!inputEl.readOnly) {
+        inputEl.value = '';
+        inputEl.style.backgroundColor = '';
+        inputEl.style.color = '#000';
+      }
+    }
+  }
+}
 
-    function createBoard(puzzle) {
-      const table = document.getElementById("sudoku");
-      table.innerHTML = "";
-      for (let i = 0; i < 6; i++) {
-        const row = table.insertRow();
-        for (let j = 0; j < 6; j++) {
-          const cell = row.insertCell();
-          const input = document.createElement("input");
-          input.id = `cell-${i}-${j}`;
-          const val = puzzle[i][j];
-          if (val !== 0) {
-            input.value = val;
-            input.readOnly = true;
-          }
-          input.addEventListener("input", () => {
-            if (input.readOnly) return;
-            const v = input.value.trim();
-            if (v !== String(allowedDigit)) {
-              input.value = "";
-            }
-            sendBoard();
-          });
-          cell.appendChild(input);
-        }
+    const puzzle = [
+      [0, 1, 0, 6, 0, 0],
+      [3, 4, 0, 1, 0, 0],
+      [1, 0, 3, 0, 0, 0],
+      [0, 0, 0, 2, 3, 0],
+      [0, 0, 0, 0, 0, 0],
+      [5, 3, 1, 0, 0, 0]
+    ];
+
+    const colorMap = {
+      1: '#ffe0e0', // light red
+      2: '#e0f7ff', // light blue
+      3: '#e0ffe0', // light green
+      4: '#fff8e0', // light yellow
+      5: '#f0e0ff', // light purple
+      6: '#e0e0e0'  // light gray
+    };
+
+    function colorInput(inputEl, val) {
+      if (val >= 1 && val <= 6) {
+        inputEl.style.backgroundColor = colorMap[val];
+        inputEl.style.color = '#000';
+      } else {
+        inputEl.style.backgroundColor = '';
+        inputEl.style.color = '#000';
       }
     }
 
-    function getBoard() {
+    const table = document.getElementById('sudoku');
+    let html = '';
+
+    for (let i = 0; i < 6; i++) {
+      html += '<tr>';
+      for (let j = 0; j < 6; j++) {
+        const val = puzzle[i][j];
+        const readonlyAttr = val !== 0 ? 'readonly' : '';
+        const displayVal = val !== 0 ? val : '';
+        html += `<td><input type="text" maxlength="1" id="cell-${i}-${j}" value="${displayVal}" ${readonlyAttr}></td>`;
+      }
+      html += '</tr>';
+    }
+
+    table.innerHTML = html;
+
+    // Colorize initial board
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 6; j++) {
+        const inputEl = document.getElementById(`cell-${i}-${j}`);
+        const val = puzzle[i][j];
+        colorInput(inputEl, val);
+
+        // Add event listener
+        inputEl.addEventListener('input', updateBoard);
+      }
+    }
+
+    function updateBoard() {
       const board = [];
       for (let i = 0; i < 6; i++) {
         const row = [];
         for (let j = 0; j < 6; j++) {
-          const input = document.getElementById(`cell-${i}-${j}`);
-          const val = parseInt(input.value) || 0;
-          row.push(val);
+          const inputEl = document.getElementById(`cell-${i}-${j}`);
+          const val = inputEl.value;
+          const num = val ? parseInt(val) || 0 : 0;
+          colorInput(inputEl, num);  // <-- Apply color
+          row.push(num);
         }
         board.push(row);
       }
-      return board;
-    }
 
-    function sendBoard() {
-      const board = getBoard();
       window.parent.postMessage({
         isStreamlitMessage: true,
-        type: "streamlit:setComponentValue",
+        type: 'streamlit:setComponentValue',
         value: board
-      }, "*");
+      }, '*');
     }
 
-    window.addEventListener("message", (event) => {
-      const data = event.data;
-      if (data.type === "streamlit:render") {
-        allowedDigit = data.args.allowedDigit;
-        initialPuzzle = data.args.initialPuzzle;
-        createBoard(initialPuzzle);
-        sendBoard();
-        window.parent.postMessage({ isStreamlitMessage: true, type: "streamlit:componentReady", apiVersion: 1 }, "*");
-        window.parent.postMessage({ isStreamlitMessage: true, type: "streamlit:setFrameHeight", height: document.documentElement.scrollHeight }, "*");
+    function sendMessage(type, data = {}) {
+      window.parent.postMessage({ isStreamlitMessage: true, type, ...data }, '*');
+    }
+
+    window.addEventListener('message', event => {
+      if (event.data.type === 'streamlit:render') {
+        sendMessage('streamlit:setFrameHeight', { height: document.documentElement.scrollHeight });
       }
     });
+
+    sendMessage('streamlit:componentReady', { apiVersion: 1 });
+    sendMessage('streamlit:setFrameHeight', { height: document.documentElement.scrollHeight });
   </script>
 </body>
 </html>
