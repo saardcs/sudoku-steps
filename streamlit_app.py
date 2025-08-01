@@ -33,7 +33,7 @@ if "step_index" not in st.session_state:
 
 # Use your existing sudoku component here
 # Replace 'path="sudoku1"' with your actual component path or code
-sudoku = components.declare_component("sudoku1", path="sudoku1")
+sudoku = components.declare_component("sudoku", path="sudoku_component")
 
 if st.session_state.step_index >= len(step_plan):
     st.balloons()
