@@ -8,7 +8,7 @@ st.title("Sudoku Prep")
 
 # Sidebar with QR code
 st.sidebar.header("Scan This QR Code to View Menu Online")
-qr_link = "https://sudoku-prep.streamlit.app"  # Replace with your actual URL
+qr_link = "https://sudoku-steps.streamlit.app"  # Replace with your actual URL
 qr = qrcode.make(qr_link)
 buf = io.BytesIO()
 qr.save(buf)
@@ -35,7 +35,7 @@ if "step_index" not in st.session_state:
     st.session_state.step_index = 0
 
 # Declare your sudoku component (assuming you have it locally as before)
-sudoku = components.declare_component("sudoku1", path="sudoku1")  # Adjust if needed
+sudoku = components.declare_component("sudoku", path="sudoku_component")  # Adjust if needed
 
 # Show progress or completion
 if st.session_state.step_index >= len(step_plan):
