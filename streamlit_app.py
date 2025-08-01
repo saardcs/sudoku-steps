@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="Sudoku Step Solver", layout="centered")
 st.title("🧩 Sudoku Step Solver")
 
+# Initial board setup (0 = empty)
 initial_puzzle = [
     [0, 1, 0, 6, 0, 0],
     [3, 4, 0, 1, 0, 0],
@@ -13,15 +14,7 @@ initial_puzzle = [
     [5, 3, 1, 0, 0, 0]
 ]
 
-solution = [
-    [2, 1, 5, 6, 4, 3],
-    [3, 4, 6, 1, 5, 2],
-    [1, 2, 3, 5, 6, 4],
-    [6, 5, 4, 2, 3, 1],
-    [4, 6, 2, 3, 1, 5],
-    [5, 3, 1, 4, 2, 6]
-]
-
+# Step plan from your message
 step_plan = [
     {"digit": 1, "cells": [(3, 5), (4, 4)]},
     {"digit": 2, "cells": [(2, 1)]},
@@ -34,42 +27,61 @@ step_plan = [
     {"digit": 6, "cells": [(2, 4), (5, 5)]}
 ]
 
+# Solution board (used only for step-by-step cell checking)
+solution = [
+    [2, 1, 5, 6, 4, 3],
+    [3, 4, 6, 1, 5, 2],
+    [1, 2, 3, 5, 6, 4],
+    [6, 5, 4, 2, 3, 1],
+    [4, 6, 2, 3, 1, 5],
+    [5, 3, 1, 4, 2, 6]
+]
+
+# Track current step
 if "step_index" not in st.session_state:
     st.session_state.step_index = 0
 
+# Done!
 if st.session_state.step_index >= len(step_plan):
-    st.success("🎉 Puzzle completed!")
     st.balloons()
+    st.success("🎉 Puzzle completed! Great job.")
     st.stop()
 
+# Get current step info
 step = step_plan[st.session_state.step_index]
 digit = step["digit"]
 target_cells = step["cells"]
 
-st.markdown(f"### Step {st.session_state.step_index + 1}: Fill all `{digit}`s in specific cells")
+st.markdown(f"### Step {st.session_state.step_index + 1}: Fill all `{digit}`s")
 
-# Sudoku component
+# Declare component
 sudoku = components.declare_component("sudoku_step_solver", path="sudoku_component")
+
+# Get board from component
 user_board = sudoku(initialPuzzle=initial_puzzle, allowedDigit=digit)
 
-# Check button
+if user_board is None:
+    st.warning("Waiting for board...")
+    st.stop()
+
+# Validate answer
 if st.button("✅ Check"):
     correct = True
+
+    # 1. Check that all required cells are filled correctly
     for i, j in target_cells:
         if user_board[i][j] != digit:
             correct = False
-            break
 
-    # No extras
+    # 2. Check no extra digit placements
     for i in range(6):
         for j in range(6):
             if (i, j) not in target_cells and user_board[i][j] == digit and initial_puzzle[i][j] == 0:
                 correct = False
-                break
 
     if correct:
         st.success("✅ Correct!")
         st.session_state.step_index += 1
         st.rerun()
     else:
-        st.error("❌ Incorrect. Make sure you filled the right cells with the correct number.")
+        st.error("❌ Not quite. Only fill this digit in the correct places.")
