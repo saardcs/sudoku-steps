@@ -85,16 +85,24 @@ if board is None:
 
 if st.button("Check Solution"):
     correct = True
-    # Check all required cells have the digit
     for (i, j) in coords:
-        if board[i][j] != digit:
+        try:
+            cell_val = int(board[i][j])
+        except (ValueError, TypeError):
+            cell_val = 0
+
+        if cell_val != digit:
             correct = False
             break
 
-    # Check no extra placements of the digit outside these coords
     for i in range(6):
         for j in range(6):
-            if board[i][j] == digit and (i, j) not in coords:
+            try:
+                cell_val = int(board[i][j])
+            except (ValueError, TypeError):
+                cell_val = 0
+
+            if cell_val == digit and (i, j) not in coords:
                 correct = False
                 break
 
