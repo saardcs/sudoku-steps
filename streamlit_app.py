@@ -1,22 +1,18 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
-# Steps with digit and coordinates to check
-steps = [
-    (1, [(3, 5), (4, 4)]),
-    (2, [(2, 1)]),
-    (3, [(0, 5), (4, 3)]),
-    (4, [(0, 4)]),
-    (5, [(4, 5), (1, 4), (2, 3), (0, 2), (3, 1)]),
-    (6, [(1, 2), (0, 3), (4, 1)]),
-    # 2nd iteration
-    (2, [(0, 0), (1, 5), (5, 4), (4, 2)]),
-    (4, [(2, 5), (5, 3), (4, 0), (3, 2)]),
-    (6, [(2, 4), (5, 5)])
-]
+# Declare your component — point this to your sudoku component folder
+# This assumes your component code is in ./sudoku_component folder
+sudoku = components.declare_component("sudoku", path="sudoku_component")
 
-if "step_index" not in st.session_state:
-    st.session_state.step_index = 0
+# Render the component and get the board (6x6 grid as list of lists)
+board = sudoku()
 
+if board is None:
+    st.write("Waiting for your Sudoku input...")
+    st.stop()
+
+# Now run the stepwise checking code (sanitizing and checking steps)
 def sanitize_board(raw_board):
     sanitized = []
     for row in raw_board:
@@ -29,15 +25,22 @@ def sanitize_board(raw_board):
         sanitized.append(new_row)
     return sanitized
 
-# Assume `board` is coming from your existing sudoku component
-# For example:
-board = st.session_state.get("board")  # your sudoku component must store this in session_state
-
-if board is None:
-    st.write("Waiting for your Sudoku input...")
-    st.stop()
-
 user_board = sanitize_board(board)
+
+steps = [
+    (1, [(3, 5), (4, 4)]),
+    (2, [(2, 1)]),
+    (3, [(0, 5), (4, 3)]),
+    (4, [(0, 4)]),
+    (5, [(4, 5), (1, 4), (2, 3), (0, 2), (3, 1)]),
+    (6, [(1, 2), (0, 3), (4, 1)]),
+    (2, [(0, 0), (1, 5), (5, 4), (4, 2)]),
+    (4, [(2, 5), (5, 3), (4, 0), (3, 2)]),
+    (6, [(2, 4), (5, 5)])
+]
+
+if "step_index" not in st.session_state:
+    st.session_state.step_index = 0
 
 digit, coords = steps[st.session_state.step_index]
 
@@ -48,7 +51,7 @@ for (i, j) in coords:
         correct = False
         break
 
-# Check that no extra cells have the digit (only those coords)
+# Check no extra cells have the digit outside coords
 if correct:
     for i in range(6):
         for j in range(6):
@@ -67,6 +70,5 @@ if correct:
 else:
     st.error(f"Step {st.session_state.step_index+1}: Incorrect. Please fill all {digit}s exactly as required.")
 
-# Add a button to reset if needed
 if st.button("Restart Steps"):
     st.session_state.step_index = 0
